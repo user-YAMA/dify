@@ -304,7 +304,7 @@ x-shared-env: &shared-api-worker-env
   TABLESTORE_INSTANCE_NAME: ${TABLESTORE_INSTANCE_NAME:-instance-name}
   TABLESTORE_ACCESS_KEY_ID: ${TABLESTORE_ACCESS_KEY_ID:-xxx}
   TABLESTORE_ACCESS_KEY_SECRET: ${TABLESTORE_ACCESS_KEY_SECRET:-xxx}
-  UPLOAD_FILE_SIZE_LIMIT: ${UPLOAD_FILE_SIZE_LIMIT:-15}
+  UPLOAD_FILE_SIZE_LIMIT: ${UPLOAD_FILE_SIZE_LIMIT:-1000}
   UPLOAD_FILE_BATCH_LIMIT: ${UPLOAD_FILE_BATCH_LIMIT:-5}
   ETL_TYPE: ${ETL_TYPE:-dify}
   UNSTRUCTURED_API_URL: ${UNSTRUCTURED_API_URL:-}
@@ -664,7 +664,7 @@ services:
 
   # The redis cache.
   redis:
-    image: redis:6-alpine
+    image: redis:latest
     restart: always
     environment:
       REDISCLI_AUTH: ${REDIS_PASSWORD:-difyai123456}
@@ -825,7 +825,7 @@ services:
       NGINX_SSL_CERT_KEY_FILENAME: ${NGINX_SSL_CERT_KEY_FILENAME:-dify.key}
       NGINX_SSL_PROTOCOLS: ${NGINX_SSL_PROTOCOLS:-TLSv1.1 TLSv1.2 TLSv1.3}
       NGINX_WORKER_PROCESSES: ${NGINX_WORKER_PROCESSES:-auto}
-      NGINX_CLIENT_MAX_BODY_SIZE: ${NGINX_CLIENT_MAX_BODY_SIZE:-100M}
+      NGINX_CLIENT_MAX_BODY_SIZE: ${NGINX_CLIENT_MAX_BODY_SIZE:-1000M}
       NGINX_KEEPALIVE_TIMEOUT: ${NGINX_KEEPALIVE_TIMEOUT:-65}
       NGINX_PROXY_READ_TIMEOUT: ${NGINX_PROXY_READ_TIMEOUT:-3600s}
       NGINX_PROXY_SEND_TIMEOUT: ${NGINX_PROXY_SEND_TIMEOUT:-3600s}
@@ -1262,6 +1262,24 @@ services:
     volumes:
       - ./volumes/unstructured:/app/data
 
+  xinference:
+    image: xprobe/xinference:latest
+    container_name: xinference
+    ports:
+      - "9997:9997"
+    # volumes:
+    #   - xinference_data:/root/.xinference
+    command: xinference-local --host 0.0.0.0 --port 9997
+    deploy:
+      resources:
+        reservations:
+          devices:
+            - driver: nvidia
+              count: all
+              capabilities: [gpu]
+    restart: always
+
+
 networks:
   # create a network between sandbox, api and ssrf_proxy, and can not access outside.
   ssrf_proxy_network:
@@ -1272,6 +1290,8 @@ networks:
   opensearch-net:
     driver: bridge
     internal: true
+
+
 
 volumes:
   oradata:
